@@ -4,8 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { propertySchema, type PropertyInput } from "@/lib/schemas";
 
-export type { PropertyInput };
-
 interface ActionResult {
   error?: string;
 }

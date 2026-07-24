@@ -4,8 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { bookingSchema, type BookingInput } from "@/lib/schemas";
 
-export type { BookingInput };
-
 interface ActionResult {
   error?: string;
 }

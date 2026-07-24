@@ -25,6 +25,18 @@ function sourceLabel(source: Booking["source"]) {
   return BOOKING_SOURCES.find((s) => s.value === source)?.label ?? source;
 }
 
+const SOURCE_DOT_CLASS: Record<Booking["source"], string> = {
+  airbnb: "bg-rose-500",
+  booking_com: "bg-blue-500",
+  direct: "bg-primary",
+};
+
+const SOURCE_MODIFIER_CLASS: Record<Booking["source"], string> = {
+  airbnb: "bg-rose-500/15 font-semibold text-rose-600 dark:text-rose-400",
+  booking_com: "bg-blue-500/15 font-semibold text-blue-600 dark:text-blue-400",
+  direct: "bg-primary/15 font-semibold text-primary",
+};
+
 const STATUS_LABEL: Record<PayoutStatus, string> = {
   received: "Received",
   backlog: "Pending",
@@ -71,17 +83,21 @@ export function BookingsView({
   const propertyName = (id: string) =>
     properties.find((p) => p.id === id)?.name ?? "—";
 
-  const bookedDates = useMemo(() => {
-    const dates: Date[] = [];
+  const datesBySource = useMemo(() => {
+    const result: Record<Booking["source"], Date[]> = {
+      airbnb: [],
+      booking_com: [],
+      direct: [],
+    };
     for (const booking of bookings) {
       const cursor = new Date(`${booking.check_in}T00:00:00`);
       const end = new Date(`${booking.check_out}T00:00:00`);
       while (cursor < end) {
-        dates.push(new Date(cursor));
+        result[booking.source].push(new Date(cursor));
         cursor.setDate(cursor.getDate() + 1);
       }
     }
-    return dates;
+    return result;
   }, [bookings]);
 
   const [year, monthIndex] = month.split("-").map(Number);
@@ -162,18 +178,30 @@ export function BookingsView({
       </TabsContent>
 
       <TabsContent value="calendar">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
           <Card>
-            <CardContent>
+            <CardContent className="flex flex-col gap-3">
               <Calendar
+                className="w-fit [--cell-size:3rem]"
                 defaultMonth={defaultMonth}
                 selected={selectedDate}
                 onDayClick={(day) => setSelectedDate(day)}
-                modifiers={{ booked: bookedDates }}
-                modifiersClassNames={{
-                  booked: "bg-primary/15 font-semibold",
-                }}
+                modifiers={datesBySource}
+                modifiersClassNames={SOURCE_MODIFIER_CLASS}
               />
+              <div className="flex flex-wrap items-center gap-4 border-t pt-3 text-sm text-muted-foreground">
+                {BOOKING_SOURCES.map((source) => (
+                  <div key={source.value} className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "inline-block size-2.5 rounded-full",
+                        SOURCE_DOT_CLASS[source.value]
+                      )}
+                    />
+                    {source.label}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
           <Card className="flex-1">

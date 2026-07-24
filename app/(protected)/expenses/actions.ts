@@ -4,8 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { expenseSchema, type ExpenseInput } from "@/lib/schemas";
 
-export type { ExpenseInput };
-
 interface ActionResult {
   error?: string;
 }
