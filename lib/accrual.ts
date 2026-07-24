@@ -1,4 +1,3 @@
-import { currentMonthKey } from "@/lib/dates";
 import type { Booking } from "@/lib/types";
 
 export function bookingGross(
@@ -54,20 +53,6 @@ export function accrueBookingsByMonth(
   }
 
   return map;
-}
-
-export type PayoutStatus = "received" | "backlog" | "future";
-
-/** received = checked out before the reference month; backlog = checks out that
- * month (pays out next month); future = checks out after the reference month. */
-export function payoutStatus(
-  checkOut: string,
-  referenceMonth: string = currentMonthKey()
-): PayoutStatus {
-  const month = checkOut.slice(0, 7);
-  if (month < referenceMonth) return "received";
-  if (month === referenceMonth) return "backlog";
-  return "future";
 }
 
 export function resolveAvailableNights(

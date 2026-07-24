@@ -21,7 +21,7 @@ const HEADERS = [
   "owner_share",
   "commission",
   "platform_fee",
-  "source (airbnb/booking_com/direct)",
+  "source (e.g. Airbnb, Booking.com, VRBO, Direct, or any custom name)",
   "notes",
 ];
 
@@ -58,7 +58,7 @@ export function BookingsImportTab({ properties }: { properties: Property[] }) {
             owner_share: raw.owner_share || "0",
             commission: raw.commission || "0",
             platform_fee: raw.platform_fee || "0",
-            source: (raw.source || "direct").trim().toLowerCase(),
+            source: (raw.source || "Direct").trim(),
             notes: raw.notes,
           });
           if (!parsed.success) {

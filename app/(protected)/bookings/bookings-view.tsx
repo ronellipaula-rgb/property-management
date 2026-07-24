@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { differenceInCalendarDays } from "date-fns";
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -15,51 +18,45 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn, formatCurrency } from "@/lib/utils";
-import { BOOKING_SOURCES } from "@/lib/types";
 import type { Booking, Property } from "@/lib/types";
-import { payoutStatus, type PayoutStatus } from "@/lib/accrual";
 import { BookingDialog } from "./booking-dialog";
 import { DeleteBookingButton } from "./delete-booking-button";
+import { setPaymentReceived } from "./actions";
 
-function sourceLabel(source: Booking["source"]) {
-  return BOOKING_SOURCES.find((s) => s.value === source)?.label ?? source;
-}
-
-const SOURCE_DOT_CLASS: Record<Booking["source"], string> = {
-  airbnb: "bg-rose-500",
-  booking_com: "bg-blue-500",
-  direct: "bg-primary",
+const KNOWN_SOURCE_COLORS: Record<string, { dot: string; modifier: string }> = {
+  Airbnb: {
+    dot: "bg-rose-500",
+    modifier: "bg-rose-500/15 font-semibold text-rose-600 dark:text-rose-400",
+  },
+  "Booking.com": {
+    dot: "bg-blue-500",
+    modifier: "bg-blue-500/15 font-semibold text-blue-600 dark:text-blue-400",
+  },
+  VRBO: {
+    dot: "bg-amber-500",
+    modifier: "bg-amber-500/15 font-semibold text-amber-600 dark:text-amber-400",
+  },
+  Expedia: {
+    dot: "bg-violet-500",
+    modifier: "bg-violet-500/15 font-semibold text-violet-600 dark:text-violet-400",
+  },
+  TripAdvisor: {
+    dot: "bg-emerald-500",
+    modifier: "bg-emerald-500/15 font-semibold text-emerald-600 dark:text-emerald-400",
+  },
+  Direct: {
+    dot: "bg-primary",
+    modifier: "bg-primary/15 font-semibold text-primary",
+  },
 };
 
-const SOURCE_MODIFIER_CLASS: Record<Booking["source"], string> = {
-  airbnb: "bg-rose-500/15 font-semibold text-rose-600 dark:text-rose-400",
-  booking_com: "bg-blue-500/15 font-semibold text-blue-600 dark:text-blue-400",
-  direct: "bg-primary/15 font-semibold text-primary",
+const FALLBACK_SOURCE_COLOR = {
+  dot: "bg-slate-400",
+  modifier: "bg-slate-400/15 font-semibold text-slate-600 dark:text-slate-400",
 };
 
-const STATUS_LABEL: Record<PayoutStatus, string> = {
-  received: "Received",
-  backlog: "Pending",
-  future: "Future",
-};
-
-const STATUS_CLASS: Record<PayoutStatus, string> = {
-  received: "bg-success/10 text-success",
-  backlog: "bg-accent/20 text-accent-foreground",
-  future: "bg-muted text-muted-foreground",
-};
-
-function StatusBadge({ status }: { status: PayoutStatus }) {
-  return (
-    <span
-      className={cn(
-        "rounded-full px-2 py-0.5 text-xs font-medium",
-        STATUS_CLASS[status]
-      )}
-    >
-      {STATUS_LABEL[status]}
-    </span>
-  );
+function sourceColor(source: string) {
+  return KNOWN_SOURCE_COLORS[source] ?? FALLBACK_SOURCE_COLOR;
 }
 
 function isDateWithinBooking(date: Date, booking: Booking) {
@@ -67,6 +64,43 @@ function isDateWithinBooking(date: Date, booking: Booking) {
     date.getDate()
   ).padStart(2, "0")}`;
   return dateStr >= booking.check_in && dateStr < booking.check_out;
+}
+
+function PaymentToggle({ booking }: { booking: Booking }) {
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function handleChange(checked: boolean) {
+    startTransition(async () => {
+      const result = await setPaymentReceived(booking.id, checked);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Checkbox
+        checked={booking.payment_received}
+        disabled={pending}
+        onCheckedChange={(checked) => handleChange(checked === true)}
+        aria-label="Mark payment received"
+      />
+      <span
+        className={cn(
+          "rounded-full px-2 py-0.5 text-xs font-medium",
+          booking.payment_received
+            ? "bg-success/10 text-success"
+            : "bg-accent/20 text-accent-foreground"
+        )}
+      >
+        {booking.payment_received ? "Received" : "To receive"}
+      </span>
+    </div>
+  );
 }
 
 export function BookingsView({
@@ -84,21 +118,28 @@ export function BookingsView({
     properties.find((p) => p.id === id)?.name ?? "—";
 
   const datesBySource = useMemo(() => {
-    const result: Record<Booking["source"], Date[]> = {
-      airbnb: [],
-      booking_com: [],
-      direct: [],
-    };
+    const map: Record<string, Date[]> = {};
     for (const booking of bookings) {
       const cursor = new Date(`${booking.check_in}T00:00:00`);
       const end = new Date(`${booking.check_out}T00:00:00`);
+      const dates = map[booking.source] ?? (map[booking.source] = []);
       while (cursor < end) {
-        result[booking.source].push(new Date(cursor));
+        dates.push(new Date(cursor));
         cursor.setDate(cursor.getDate() + 1);
       }
     }
-    return result;
+    return map;
   }, [bookings]);
+
+  const sourcesPresent = Object.keys(datesBySource).sort();
+
+  const modifiersClassNames = useMemo(() => {
+    const result: Record<string, string> = {};
+    for (const source of sourcesPresent) {
+      result[source] = sourceColor(source).modifier;
+    }
+    return result;
+  }, [sourcesPresent]);
 
   const [year, monthIndex] = month.split("-").map(Number);
   const defaultMonth = new Date(year, monthIndex - 1, 1);
@@ -108,11 +149,79 @@ export function BookingsView({
     : [];
 
   return (
-    <Tabs defaultValue="list">
+    <Tabs defaultValue="calendar">
       <TabsList>
-        <TabsTrigger value="list">List</TabsTrigger>
         <TabsTrigger value="calendar">Calendar</TabsTrigger>
+        <TabsTrigger value="list">List</TabsTrigger>
       </TabsList>
+
+      <TabsContent value="calendar">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+          <Card>
+            <CardContent className="flex flex-col gap-3">
+              <Calendar
+                className="w-fit [--cell-size:3rem]"
+                defaultMonth={defaultMonth}
+                selected={selectedDate}
+                onDayClick={(day) => setSelectedDate(day)}
+                modifiers={datesBySource}
+                modifiersClassNames={modifiersClassNames}
+              />
+              {sourcesPresent.length > 0 && (
+                <div className="flex flex-wrap items-center gap-4 border-t pt-3 text-sm text-muted-foreground">
+                  {sourcesPresent.map((source) => (
+                    <div key={source} className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "inline-block size-2.5 rounded-full",
+                          sourceColor(source).dot
+                        )}
+                      />
+                      {source}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="flex-1">
+            <CardContent className="flex flex-col gap-3">
+              <p className="text-sm font-medium text-muted-foreground">
+                {selectedDate
+                  ? `Bookings on ${selectedDate.toLocaleDateString("en-CA")}`
+                  : "Click a highlighted day to see bookings"}
+              </p>
+              {selectedDayBookings.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {selectedDate ? "No bookings on this day." : ""}
+                </p>
+              ) : (
+                selectedDayBookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <p className="font-medium">{booking.guest_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {propertyName(booking.property_id)} ·{" "}
+                        {booking.check_in} → {booking.check_out}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <PaymentToggle booking={booking} />
+                      <div className="flex gap-2">
+                        <BookingDialog booking={booking} properties={properties} />
+                        <DeleteBookingButton id={booking.id} />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
 
       <TabsContent value="list">
         {bookings.length === 0 ? (
@@ -133,7 +242,7 @@ export function BookingsView({
                     <TableHead>Check-out</TableHead>
                     <TableHead>Nights</TableHead>
                     <TableHead>Source</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
                     <TableHead className="text-right">Your share</TableHead>
                     <TableHead className="w-24" />
                   </TableRow>
@@ -154,10 +263,10 @@ export function BookingsView({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{sourceLabel(booking.source)}</Badge>
+                        <Badge variant="outline">{booking.source}</Badge>
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={payoutStatus(booking.check_out)} />
+                        <PaymentToggle booking={booking} />
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(booking.owner_share)}
@@ -175,69 +284,6 @@ export function BookingsView({
             </CardContent>
           </Card>
         )}
-      </TabsContent>
-
-      <TabsContent value="calendar">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-          <Card>
-            <CardContent className="flex flex-col gap-3">
-              <Calendar
-                className="w-fit [--cell-size:3rem]"
-                defaultMonth={defaultMonth}
-                selected={selectedDate}
-                onDayClick={(day) => setSelectedDate(day)}
-                modifiers={datesBySource}
-                modifiersClassNames={SOURCE_MODIFIER_CLASS}
-              />
-              <div className="flex flex-wrap items-center gap-4 border-t pt-3 text-sm text-muted-foreground">
-                {BOOKING_SOURCES.map((source) => (
-                  <div key={source.value} className="flex items-center gap-1.5">
-                    <span
-                      className={cn(
-                        "inline-block size-2.5 rounded-full",
-                        SOURCE_DOT_CLASS[source.value]
-                      )}
-                    />
-                    {source.label}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="flex-1">
-            <CardContent className="flex flex-col gap-3">
-              <p className="text-sm font-medium text-muted-foreground">
-                {selectedDate
-                  ? `Bookings on ${selectedDate.toLocaleDateString("en-CA")}`
-                  : "Click a highlighted day to see bookings"}
-              </p>
-              {selectedDayBookings.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {selectedDate ? "No bookings on this day." : ""}
-                </p>
-              ) : (
-                selectedDayBookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <div>
-                      <p className="font-medium">{booking.guest_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {propertyName(booking.property_id)} ·{" "}
-                        {booking.check_in} → {booking.check_out}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <BookingDialog booking={booking} properties={properties} />
-                      <DeleteBookingButton id={booking.id} />
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
       </TabsContent>
     </Tabs>
   );

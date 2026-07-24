@@ -17,7 +17,7 @@ export const bookingSchema = z
     owner_share: z.coerce.number().min(0, "Must be 0 or more"),
     commission: z.coerce.number().min(0, "Must be 0 or more"),
     platform_fee: z.coerce.number().min(0, "Must be 0 or more"),
-    source: z.enum(["airbnb", "booking_com", "direct"]),
+    source: z.string().min(1, "Source is required"),
     notes: z.string().optional(),
   })
   .refine((data) => data.check_out > data.check_in, {

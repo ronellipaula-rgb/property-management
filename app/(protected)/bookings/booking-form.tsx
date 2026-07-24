@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,9 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BOOKING_SOURCES } from "@/lib/types";
+import { BOOKING_SOURCE_PRESETS } from "@/lib/types";
 import type { Booking, Property } from "@/lib/types";
 import { createBooking, updateBooking } from "./actions";
+
+const OTHER = "Other";
 
 const schema = z
   .object({
@@ -29,7 +31,7 @@ const schema = z
     owner_share: z.coerce.number().min(0, "Must be 0 or more"),
     commission: z.coerce.number().min(0, "Must be 0 or more"),
     platform_fee: z.coerce.number().min(0, "Must be 0 or more"),
-    source: z.enum(["airbnb", "booking_com", "direct"]),
+    source: z.string().min(1, "Source is required"),
     notes: z.string().optional(),
   })
   .refine((data) => data.check_out > data.check_in, {
@@ -39,6 +41,10 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 type FormInput = z.input<typeof schema>;
+
+function isPreset(source: string): boolean {
+  return (BOOKING_SOURCE_PRESETS as readonly string[]).includes(source);
+}
 
 export function BookingForm({
   booking,
@@ -52,10 +58,15 @@ export function BookingForm({
   onSuccess: () => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const [sourceMode, setSourceMode] = useState<string>(() => {
+    if (!booking) return "Direct";
+    return isPreset(booking.source) ? booking.source : OTHER;
+  });
   const {
     register,
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(schema),
@@ -67,10 +78,21 @@ export function BookingForm({
       owner_share: booking?.owner_share ?? 0,
       commission: booking?.commission ?? 0,
       platform_fee: booking?.platform_fee ?? 0,
-      source: booking?.source ?? "direct",
+      source: booking?.source ?? "Direct",
       notes: booking?.notes ?? "",
     },
   });
+
+  function handleSourceModeChange(value: string) {
+    setSourceMode(value);
+    if (value !== OTHER) {
+      setValue("source", value, { shouldValidate: true });
+    } else {
+      setValue("source", isPreset(booking?.source ?? "") ? "" : (booking?.source ?? ""), {
+        shouldValidate: true,
+      });
+    }
+  }
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
@@ -175,25 +197,30 @@ export function BookingForm({
       </p>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="source">Source</Label>
-        <Controller
-          control={control}
-          name="source"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="source" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {BOOKING_SOURCES.map((source) => (
-                  <SelectItem key={source.value} value={source.value}>
-                    {source.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
+        <Label htmlFor="source_mode">Source</Label>
+        <Select value={sourceMode} onValueChange={handleSourceModeChange}>
+          <SelectTrigger id="source_mode" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {BOOKING_SOURCE_PRESETS.map((preset) => (
+              <SelectItem key={preset} value={preset}>
+                {preset}
+              </SelectItem>
+            ))}
+            <SelectItem value={OTHER}>Other</SelectItem>
+          </SelectContent>
+        </Select>
+        {sourceMode === OTHER && (
+          <Input
+            className="mt-2"
+            placeholder="Enter the platform or source name"
+            {...register("source")}
+          />
+        )}
+        {errors.source && (
+          <p className="text-sm text-destructive">{errors.source.message}</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">

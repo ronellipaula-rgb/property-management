@@ -1,13 +1,21 @@
 "use client";
 
 import { useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CURRENCIES } from "@/lib/types";
 import type { Property } from "@/lib/types";
 import { createProperty, updateProperty } from "./actions";
 
@@ -29,6 +37,7 @@ export function PropertyForm({
   const [pending, startTransition] = useTransition();
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({
@@ -71,7 +80,24 @@ export function PropertyForm({
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="currency">Currency</Label>
-        <Input id="currency" {...register("currency")} />
+        <Controller
+          control={control}
+          name="currency"
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id="currency" className="w-full">
+                <SelectValue placeholder="Select a currency" />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((currency) => (
+                  <SelectItem key={currency.value} value={currency.value}>
+                    {currency.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
         {errors.currency && (
           <p className="text-sm text-destructive">{errors.currency.message}</p>
         )}

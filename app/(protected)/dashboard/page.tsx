@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { currentMonthKey, getMonthRange, lastNMonths } from "@/lib/dates";
-import { accrueBookingsByMonth, payoutStatus, resolveAvailableNights } from "@/lib/accrual";
+import { accrueBookingsByMonth, resolveAvailableNights } from "@/lib/accrual";
 import { cn, formatCurrency, formatMonthLabel } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PropertySelector } from "@/components/property-selector";
@@ -96,29 +96,42 @@ export default async function DashboardPage({
   const month = currentMonthKey();
   const { start, end, daysInMonth } = getMonthRange(month);
 
-  const [{ data: bookings }, { data: expenses }, { data: availabilityRowRaw }] =
-    await Promise.all([
-      supabase
-        .from("bookings")
-        .select("*")
-        .eq("property_id", propertyId)
-        .lte("check_in", end)
-        .gte("check_out", start)
-        .returns<Booking[]>(),
-      supabase
-        .from("expenses")
-        .select("*")
-        .eq("property_id", propertyId)
-        .gte("date", start)
-        .lte("date", end)
-        .returns<Expense[]>(),
-      supabase
-        .from("availability")
-        .select("*")
-        .eq("property_id", propertyId)
-        .eq("month", `${month}-01`)
-        .maybeSingle(),
-    ]);
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [
+    { data: bookings },
+    { data: expenses },
+    { data: availabilityRowRaw },
+    { data: unpaidBookings },
+  ] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("*")
+      .eq("property_id", propertyId)
+      .lte("check_in", end)
+      .gte("check_out", start)
+      .returns<Booking[]>(),
+    supabase
+      .from("expenses")
+      .select("*")
+      .eq("property_id", propertyId)
+      .gte("date", start)
+      .lte("date", end)
+      .returns<Expense[]>(),
+    supabase
+      .from("availability")
+      .select("*")
+      .eq("property_id", propertyId)
+      .eq("month", `${month}-01`)
+      .maybeSingle(),
+    supabase
+      .from("bookings")
+      .select("*")
+      .eq("property_id", propertyId)
+      .eq("payment_received", false)
+      .lte("check_out", today)
+      .returns<Booking[]>(),
+  ]);
   const availabilityRow = availabilityRowRaw as Availability | null;
 
   const accrual = accrueBookingsByMonth(bookings ?? []);
@@ -141,9 +154,10 @@ export default async function DashboardPage({
   );
   const occupancyRate = availableNights > 0 ? bookedNights / availableNights : 0;
 
-  const backlog = (bookings ?? [])
-    .filter((b) => payoutStatus(b.check_out, month) === "backlog")
-    .reduce((sum, b) => sum + b.owner_share, 0);
+  const toReceive = (unpaidBookings ?? []).reduce(
+    (sum, b) => sum + b.owner_share,
+    0
+  );
 
   const trendMonths = lastNMonths(6);
   const trendStart = getMonthRange(trendMonths[0]).start;
@@ -249,8 +263,8 @@ export default async function DashboardPage({
         />
         <MetricCard
           title="To receive"
-          value={formatCurrency(backlog, property.currency)}
-          subtitle="Pays out next month"
+          value={formatCurrency(toReceive, property.currency)}
+          subtitle="Checked out, not yet marked received"
         />
       </div>
 

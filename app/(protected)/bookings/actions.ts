@@ -73,3 +73,19 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
   revalidatePath("/", "layout");
   return {};
 }
+
+export async function setPaymentReceived(
+  id: string,
+  received: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("bookings")
+    .update({ payment_received: received })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/", "layout");
+  return {};
+}

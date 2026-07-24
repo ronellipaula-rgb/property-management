@@ -1,10 +1,4 @@
-import type { Booking, BookingSource } from "@/lib/types";
-
-const SOURCE_LABEL: Record<BookingSource, string> = {
-  airbnb: "Airbnb",
-  booking_com: "Booking.com",
-  direct: "Direct",
-};
+import type { Booking } from "@/lib/types";
 
 function escapeText(value: string) {
   return value
@@ -37,7 +31,7 @@ export function generateIcs(
   for (const booking of bookings) {
     const summary = `${booking.guest_name} — ${propertyName(booking.property_id)}`;
     const descriptionParts = [
-      `Source: ${SOURCE_LABEL[booking.source]}`,
+      `Source: ${booking.source}`,
       `Your share: ${booking.owner_share.toFixed(2)}`,
       `Commission: ${booking.commission.toFixed(2)}`,
       `Platform fee: ${booking.platform_fee.toFixed(2)}`,
