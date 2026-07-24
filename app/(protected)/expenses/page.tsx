@@ -1,0 +1,140 @@
+import { createClient } from "@/lib/supabase/server";
+import { currentMonthKey, getMonthRange } from "@/lib/dates";
+import { formatCurrency } from "@/lib/utils";
+import { EXPENSE_CATEGORIES } from "@/lib/types";
+import type { Expense, ExpenseCategory, Property } from "@/lib/types";
+import { MonthPicker } from "@/components/month-picker";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ExpenseDialog } from "./expense-dialog";
+import { DeleteExpenseButton } from "./delete-expense-button";
+import { CategoryFilter } from "./category-filter";
+
+function categoryLabel(category: ExpenseCategory) {
+  return EXPENSE_CATEGORIES.find((c) => c.value === category)?.label ?? category;
+}
+
+export default async function ExpensesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string; category?: string }>;
+}) {
+  const params = await searchParams;
+  const month = params.month ?? currentMonthKey();
+  const category = params.category;
+  const { start, end } = getMonthRange(month);
+
+  const supabase = await createClient();
+
+  const [{ data: properties }, expensesQuery] = await Promise.all([
+    supabase
+      .from("properties")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .returns<Property[]>(),
+    (() => {
+      let query = supabase
+        .from("expenses")
+        .select("*")
+        .gte("date", start)
+        .lte("date", end)
+        .order("date", { ascending: false });
+      if (category) {
+        query = query.eq("category", category);
+      }
+      return query.returns<Expense[]>();
+    })(),
+  ]);
+
+  const expenses = expensesQuery.data ?? [];
+  const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const propertyName = (id: string) =>
+    properties?.find((p) => p.id === id)?.name ?? "—";
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Expenses</h1>
+        <div className="flex items-center gap-3">
+          <MonthPicker month={month} />
+          <CategoryFilter category={category} />
+          <ExpenseDialog properties={properties ?? []} />
+        </div>
+      </div>
+
+      {!properties?.length ? (
+        <p className="text-muted-foreground">
+          Add a property first before recording expenses.
+        </p>
+      ) : expenses.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            No expenses match this filter.
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Property</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Vendor</TableHead>
+                  <TableHead>Recurring</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="w-24" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses.map((expense) => (
+                  <TableRow key={expense.id}>
+                    <TableCell>{expense.date}</TableCell>
+                    <TableCell>{propertyName(expense.property_id)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{categoryLabel(expense.category)}</Badge>
+                    </TableCell>
+                    <TableCell>{expense.vendor || "—"}</TableCell>
+                    <TableCell>{expense.recurring ? "Yes" : "No"}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(expense.amount)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        <ExpenseDialog
+                          expense={expense}
+                          properties={properties ?? []}
+                        />
+                        <DeleteExpenseButton id={expense.id} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <tfoot>
+                <TableRow>
+                  <TableCell colSpan={5} className="text-right font-medium">
+                    Total
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatCurrency(total)}
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
+              </tfoot>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
