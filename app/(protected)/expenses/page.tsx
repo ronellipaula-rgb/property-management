@@ -55,7 +55,12 @@ export default async function ExpensesPage({
   ]);
 
   const expenses = expensesQuery.data ?? [];
-  const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const operatingTotal = expenses
+    .filter((e) => !e.is_capital)
+    .reduce((sum, e) => sum + e.amount, 0);
+  const capitalTotal = expenses
+    .filter((e) => e.is_capital)
+    .reduce((sum, e) => sum + e.amount, 0);
   const propertyName = (id: string) =>
     properties?.find((p) => p.id === id)?.name ?? "—";
 
@@ -91,6 +96,7 @@ export default async function ExpensesPage({
                   <TableHead>Category</TableHead>
                   <TableHead>Vendor</TableHead>
                   <TableHead>Recurring</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead className="w-24" />
                 </TableRow>
@@ -105,6 +111,13 @@ export default async function ExpensesPage({
                     </TableCell>
                     <TableCell>{expense.vendor || "—"}</TableCell>
                     <TableCell>{expense.recurring ? "Yes" : "No"}</TableCell>
+                    <TableCell>
+                      {expense.is_capital ? (
+                        <Badge variant="outline">Capital</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">Operating</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(expense.amount)}
                     </TableCell>
@@ -122,11 +135,20 @@ export default async function ExpensesPage({
               </TableBody>
               <tfoot>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-right font-medium">
-                    Total
+                  <TableCell colSpan={6} className="text-right font-medium">
+                    Operating total
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(total)}
+                    {formatCurrency(operatingTotal)}
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
+                <TableRow>
+                  <TableCell colSpan={6} className="text-right font-medium">
+                    Capital total
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatCurrency(capitalTotal)}
                   </TableCell>
                   <TableCell />
                 </TableRow>

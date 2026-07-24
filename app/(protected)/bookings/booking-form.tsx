@@ -26,9 +26,9 @@ const schema = z
     guest_name: z.string().min(1, "Guest name is required"),
     check_in: z.string().min(1, "Check-in date is required"),
     check_out: z.string().min(1, "Check-out date is required"),
-    gross_amount: z.coerce.number().min(0, "Must be 0 or more"),
+    owner_share: z.coerce.number().min(0, "Must be 0 or more"),
+    commission: z.coerce.number().min(0, "Must be 0 or more"),
     platform_fee: z.coerce.number().min(0, "Must be 0 or more"),
-    net_payout: z.coerce.number().min(0, "Must be 0 or more"),
     source: z.enum(["airbnb", "booking_com", "direct"]),
     notes: z.string().optional(),
   })
@@ -64,9 +64,9 @@ export function BookingForm({
       guest_name: booking?.guest_name ?? "",
       check_in: booking?.check_in ?? "",
       check_out: booking?.check_out ?? "",
-      gross_amount: booking?.gross_amount ?? 0,
+      owner_share: booking?.owner_share ?? 0,
+      commission: booking?.commission ?? 0,
       platform_fee: booking?.platform_fee ?? 0,
-      net_payout: booking?.net_payout ?? 0,
       source: booking?.source ?? "direct",
       notes: booking?.notes ?? "",
     },
@@ -142,12 +142,21 @@ export function BookingForm({
 
       <div className="grid grid-cols-3 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="gross_amount">Gross</Label>
+          <Label htmlFor="owner_share">Your share</Label>
           <Input
-            id="gross_amount"
+            id="owner_share"
             type="number"
             step="0.01"
-            {...register("gross_amount")}
+            {...register("owner_share")}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="commission">Commission</Label>
+          <Input
+            id="commission"
+            type="number"
+            step="0.01"
+            {...register("commission")}
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -159,16 +168,11 @@ export function BookingForm({
             {...register("platform_fee")}
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="net_payout">Net payout</Label>
-          <Input
-            id="net_payout"
-            type="number"
-            step="0.01"
-            {...register("net_payout")}
-          />
-        </div>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Gross booking value is your share + commission + platform fee, shown
+        automatically wherever it&rsquo;s needed.
+      </p>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="source">Source</Label>

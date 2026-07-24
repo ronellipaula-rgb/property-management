@@ -40,9 +40,9 @@ export interface Booking {
   guest_name: string;
   check_in: string;
   check_out: string;
-  gross_amount: number;
+  owner_share: number;
+  commission: number;
   platform_fee: number;
-  net_payout: number;
   source: BookingSource;
   notes: string | null;
   created_at: string;
@@ -58,7 +58,18 @@ export interface Expense {
   amount: number;
   vendor: string | null;
   recurring: boolean;
+  is_capital: boolean;
   notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Availability {
+  id: string;
+  owner_id: string;
+  property_id: string;
+  month: string;
+  available_nights: number;
   created_at: string;
   updated_at: string;
 }

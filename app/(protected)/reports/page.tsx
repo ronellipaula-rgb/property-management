@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMonthRange, lastNMonths } from "@/lib/dates";
+import { accrueBookingsByMonth } from "@/lib/accrual";
 import { formatMonthLabel } from "@/lib/utils";
 import { EXPENSE_CATEGORIES } from "@/lib/types";
 import type { Booking, Expense, ExpenseCategory, Property } from "@/lib/types";
@@ -45,8 +46,8 @@ export default async function ReportsPage({
       .from("bookings")
       .select("*")
       .eq("property_id", propertyId)
-      .gte("check_in", rangeStart)
       .lte("check_in", rangeEnd)
+      .gte("check_out", rangeStart)
       .returns<Booking[]>(),
     supabase
       .from("expenses")
@@ -57,11 +58,7 @@ export default async function ReportsPage({
       .returns<Expense[]>(),
   ]);
 
-  const incomeByMonth = new Map<string, number>();
-  for (const b of bookings ?? []) {
-    const key = b.check_in.slice(0, 7);
-    incomeByMonth.set(key, (incomeByMonth.get(key) ?? 0) + b.net_payout);
-  }
+  const accrual = accrueBookingsByMonth(bookings ?? []);
 
   const expenseByMonth = new Map<string, number>();
   const categoryTotals = new Map<ExpenseCategory, number>();
@@ -72,9 +69,20 @@ export default async function ReportsPage({
   }
 
   const profitByMonth = months.map((month) => {
-    const income = incomeByMonth.get(month) ?? 0;
+    const income = accrual.get(month)?.ownerShare ?? 0;
     const expense = expenseByMonth.get(month) ?? 0;
     return { month, label: formatMonthLabel(month), profit: income - expense };
+  });
+
+  const revenueByMonth = months.map((month) => {
+    const entry = accrual.get(month);
+    return {
+      month,
+      label: formatMonthLabel(month),
+      ownerShare: entry?.ownerShare ?? 0,
+      commission: entry?.commission ?? 0,
+      platformFee: entry?.platformFee ?? 0,
+    };
   });
 
   const expensesByCategory = EXPENSE_CATEGORIES.map((c) => ({
@@ -93,6 +101,7 @@ export default async function ReportsPage({
       </div>
       <ReportsCharts
         profitByMonth={profitByMonth}
+        revenueByMonth={revenueByMonth}
         expensesByCategory={expensesByCategory}
         currency={property.currency}
       />

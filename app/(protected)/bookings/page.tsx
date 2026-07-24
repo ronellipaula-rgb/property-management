@@ -1,6 +1,8 @@
+import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { currentMonthKey, getMonthRange } from "@/lib/dates";
 import type { Booking, Property } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 import { MonthPicker } from "@/components/month-picker";
 import { BookingDialog } from "./booking-dialog";
 import { BookingsView } from "./bookings-view";
@@ -37,6 +39,11 @@ export default async function BookingsPage({
         <h1 className="text-2xl font-semibold">Bookings</h1>
         <div className="flex items-center gap-3">
           <MonthPicker month={month} />
+          <Button variant="outline" asChild>
+            <a href="/bookings/export" download>
+              <Download /> Export .ics
+            </a>
+          </Button>
           <BookingDialog properties={properties ?? []} />
         </div>
       </div>

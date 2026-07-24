@@ -35,6 +35,7 @@ const schema = z.object({
   amount: z.coerce.number().min(0, "Must be 0 or more"),
   vendor: z.string().optional(),
   recurring: z.boolean(),
+  is_capital: z.boolean(),
   notes: z.string().optional(),
 });
 
@@ -67,6 +68,7 @@ export function ExpenseForm({
       amount: expense?.amount ?? 0,
       vendor: expense?.vendor ?? "",
       recurring: expense?.recurring ?? false,
+      is_capital: expense?.is_capital ?? false,
       notes: expense?.notes ?? "",
     },
   });
@@ -158,19 +160,37 @@ export function ExpenseForm({
         <Input id="vendor" {...register("vendor")} />
       </div>
 
-      <div className="flex items-center gap-2">
-        <Controller
-          control={control}
-          name="recurring"
-          render={({ field }) => (
-            <Checkbox
-              id="recurring"
-              checked={field.value}
-              onCheckedChange={(checked) => field.onChange(checked === true)}
-            />
-          )}
-        />
-        <Label htmlFor="recurring">Recurring expense</Label>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Controller
+            control={control}
+            name="recurring"
+            render={({ field }) => (
+              <Checkbox
+                id="recurring"
+                checked={field.value}
+                onCheckedChange={(checked) => field.onChange(checked === true)}
+              />
+            )}
+          />
+          <Label htmlFor="recurring">Recurring expense</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Controller
+            control={control}
+            name="is_capital"
+            render={({ field }) => (
+              <Checkbox
+                id="is_capital"
+                checked={field.value}
+                onCheckedChange={(checked) => field.onChange(checked === true)}
+              />
+            )}
+          />
+          <Label htmlFor="is_capital">
+            Capital expense (e.g. renovation, not a recurring bill)
+          </Label>
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">

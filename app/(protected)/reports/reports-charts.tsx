@@ -5,6 +5,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -27,10 +28,24 @@ const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   tax: "#eb6834",
 };
 
+const REVENUE_COLORS = {
+  ownerShare: "#1baf7a",
+  commission: "#4a3aa7",
+  platformFee: "#e34948",
+};
+
 interface ProfitPoint {
   month: string;
   label: string;
   profit: number;
+}
+
+interface RevenuePoint {
+  month: string;
+  label: string;
+  ownerShare: number;
+  commission: number;
+  platformFee: number;
 }
 
 interface CategoryPoint {
@@ -58,12 +73,45 @@ function ChartTooltip({
   );
 }
 
+function StackedTooltip({
+  active,
+  payload,
+  currency,
+}: {
+  active?: boolean;
+  payload?: {
+    name: string;
+    value: number;
+    color: string;
+    payload: { label: string };
+  }[];
+  currency: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
+      <p className="font-medium">{payload[0].payload.label}</p>
+      {payload.map((entry) => (
+        <p key={entry.name} className="flex items-center gap-1.5 text-muted-foreground">
+          <span
+            className="inline-block size-2 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
+          {entry.name}: {formatCurrency(entry.value, currency)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function ReportsCharts({
   profitByMonth,
+  revenueByMonth,
   expensesByCategory,
   currency,
 }: {
   profitByMonth: ProfitPoint[];
+  revenueByMonth: RevenuePoint[];
   expensesByCategory: CategoryPoint[];
   currency: string;
 }) {
@@ -103,6 +151,63 @@ export function ReportsCharts({
                     />
                   ))}
                 </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Revenue by month</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueByMonth} margin={{ left: 8, right: 8 }}>
+                <CartesianGrid vertical={false} stroke="var(--border)" />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={{ stroke: "var(--border)" }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                  tickFormatter={(value) => formatCurrency(value, currency)}
+                  width={80}
+                />
+                <Tooltip
+                  cursor={{ fill: "var(--muted)" }}
+                  content={<StackedTooltip currency={currency} />}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, color: "var(--muted-foreground)" }}
+                />
+                <Bar
+                  dataKey="ownerShare"
+                  name="Your share"
+                  stackId="revenue"
+                  fill={REVENUE_COLORS.ownerShare}
+                  maxBarSize={40}
+                />
+                <Bar
+                  dataKey="commission"
+                  name="Commission"
+                  stackId="revenue"
+                  fill={REVENUE_COLORS.commission}
+                  maxBarSize={40}
+                />
+                <Bar
+                  dataKey="platformFee"
+                  name="Platform fee"
+                  stackId="revenue"
+                  fill={REVENUE_COLORS.platformFee}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={40}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>

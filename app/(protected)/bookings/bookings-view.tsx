@@ -14,14 +14,40 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { BOOKING_SOURCES } from "@/lib/types";
 import type { Booking, Property } from "@/lib/types";
+import { payoutStatus, type PayoutStatus } from "@/lib/accrual";
 import { BookingDialog } from "./booking-dialog";
 import { DeleteBookingButton } from "./delete-booking-button";
 
 function sourceLabel(source: Booking["source"]) {
   return BOOKING_SOURCES.find((s) => s.value === source)?.label ?? source;
+}
+
+const STATUS_LABEL: Record<PayoutStatus, string> = {
+  received: "Received",
+  backlog: "Pending",
+  future: "Future",
+};
+
+const STATUS_CLASS: Record<PayoutStatus, string> = {
+  received: "bg-success/10 text-success",
+  backlog: "bg-accent/20 text-accent-foreground",
+  future: "bg-muted text-muted-foreground",
+};
+
+function StatusBadge({ status }: { status: PayoutStatus }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-xs font-medium",
+        STATUS_CLASS[status]
+      )}
+    >
+      {STATUS_LABEL[status]}
+    </span>
+  );
 }
 
 function isDateWithinBooking(date: Date, booking: Booking) {
@@ -91,7 +117,8 @@ export function BookingsView({
                     <TableHead>Check-out</TableHead>
                     <TableHead>Nights</TableHead>
                     <TableHead>Source</TableHead>
-                    <TableHead className="text-right">Net payout</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Your share</TableHead>
                     <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
@@ -113,8 +140,11 @@ export function BookingsView({
                       <TableCell>
                         <Badge variant="outline">{sourceLabel(booking.source)}</Badge>
                       </TableCell>
+                      <TableCell>
+                        <StatusBadge status={payoutStatus(booking.check_out)} />
+                      </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(booking.net_payout)}
+                        {formatCurrency(booking.owner_share)}
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-2">

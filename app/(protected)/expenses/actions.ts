@@ -1,27 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { expenseSchema, type ExpenseInput } from "@/lib/schemas";
 
-const expenseSchema = z.object({
-  property_id: z.string().uuid("Select a property"),
-  date: z.string().min(1, "Date is required"),
-  category: z.enum([
-    "utilities",
-    "cleaning",
-    "maintenance",
-    "supplies",
-    "insurance",
-    "tax",
-  ]),
-  amount: z.coerce.number().min(0, "Must be 0 or more"),
-  vendor: z.string().optional(),
-  recurring: z.boolean(),
-  notes: z.string().optional(),
-});
-
-export type ExpenseInput = z.infer<typeof expenseSchema>;
+export type { ExpenseInput };
 
 interface ActionResult {
   error?: string;
@@ -41,6 +24,7 @@ export async function createExpense(input: ExpenseInput): Promise<ActionResult> 
     amount: parsed.data.amount,
     vendor: parsed.data.vendor || null,
     recurring: parsed.data.recurring,
+    is_capital: parsed.data.is_capital,
     notes: parsed.data.notes || null,
   });
 
@@ -69,6 +53,7 @@ export async function updateExpense(
       amount: parsed.data.amount,
       vendor: parsed.data.vendor || null,
       recurring: parsed.data.recurring,
+      is_capital: parsed.data.is_capital,
       notes: parsed.data.notes || null,
     })
     .eq("id", id);

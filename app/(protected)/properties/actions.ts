@@ -1,16 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { propertySchema, type PropertyInput } from "@/lib/schemas";
 
-const propertySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  address: z.string().optional(),
-  currency: z.string().min(1, "Currency is required"),
-});
-
-export type PropertyInput = z.infer<typeof propertySchema>;
+export type { PropertyInput };
 
 interface ActionResult {
   error?: string;

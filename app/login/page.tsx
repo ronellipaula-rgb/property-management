@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Logo } from "@/components/logo";
 import { signIn, type LoginState } from "./actions";
 
 const initialState: LoginState = {};
@@ -19,11 +20,12 @@ export default function LoginPage() {
   const [state, formAction, pending] = useActionState(signIn, initialState);
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
+      <Logo />
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Property Manager</CardTitle>
-          <CardDescription>Sign in to your account.</CardDescription>
+          <CardTitle className="font-heading text-xl">Welcome back</CardTitle>
+          <CardDescription>Sign in to keep tracking your property.</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={formAction} className="flex flex-col gap-4">
