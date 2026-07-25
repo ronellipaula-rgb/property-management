@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EXPENSE_CATEGORIES } from "@/lib/types";
+import { ExpenseCategoryIcon } from "@/lib/expense-icons";
 
 const ALL = "all";
 
@@ -36,7 +37,10 @@ export function CategoryFilter({ category }: { category?: string }) {
         <SelectItem value={ALL}>All categories</SelectItem>
         {EXPENSE_CATEGORIES.map((c) => (
           <SelectItem key={c.value} value={c.value}>
-            {c.label}
+            <span className="flex items-center gap-2">
+              <ExpenseCategoryIcon category={c.value} className="size-4 text-primary" />
+              {c.label}
+            </span>
           </SelectItem>
         ))}
       </SelectContent>

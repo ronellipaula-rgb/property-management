@@ -4,6 +4,7 @@ import { formatCurrency } from "@/lib/utils";
 import { EXPENSE_CATEGORIES } from "@/lib/types";
 import type { Expense, ExpenseCategory, Property } from "@/lib/types";
 import { MonthPicker } from "@/components/month-picker";
+import { ExpenseCategoryIcon } from "@/lib/expense-icons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -107,7 +108,13 @@ export default async function ExpensesPage({
                     <TableCell>{expense.date}</TableCell>
                     <TableCell>{propertyName(expense.property_id)}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{categoryLabel(expense.category)}</Badge>
+                      <Badge variant="outline" className="gap-1.5">
+                        <ExpenseCategoryIcon
+                          category={expense.category}
+                          className="size-3 text-primary"
+                        />
+                        {categoryLabel(expense.category)}
+                      </Badge>
                     </TableCell>
                     <TableCell>{expense.vendor || "—"}</TableCell>
                     <TableCell>{expense.recurring ? "Yes" : "No"}</TableCell>

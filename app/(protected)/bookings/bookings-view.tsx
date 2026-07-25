@@ -3,11 +3,13 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { differenceInCalendarDays } from "date-fns";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -22,6 +24,7 @@ import type { Booking, Property } from "@/lib/types";
 import { BookingDialog } from "./booking-dialog";
 import { DeleteBookingButton } from "./delete-booking-button";
 import { setPaymentReceived } from "./actions";
+import { ImportICalDialog } from "./import-ical-dialog";
 
 const KNOWN_SOURCE_COLORS: Record<string, { dot: string; modifier: string }> = {
   Airbnb: {
@@ -167,6 +170,14 @@ export function BookingsView({
                 modifiers={datesBySource}
                 modifiersClassNames={modifiersClassNames}
               />
+              <div className="flex gap-2">
+                <Button variant="outline" asChild className="flex-1">
+                  <a href="/bookings/export" download>
+                    <Download /> Export .ics
+                  </a>
+                </Button>
+                <ImportICalDialog properties={properties} />
+              </div>
               {sourcesPresent.length > 0 && (
                 <div className="flex flex-wrap items-center gap-4 border-t pt-3 text-sm text-muted-foreground">
                   {sourcesPresent.map((source) => (

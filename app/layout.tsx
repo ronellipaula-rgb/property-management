@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Sora, Manrope, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import "./globals.css";
 
-const sora = Sora({
+const spaceGrotesk = Space_Grotesk({
   variable: "--font-display",
   subsets: ["latin"],
 });
 
-const manrope = Manrope({
+const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
 });
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sora.variable} ${manrope.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

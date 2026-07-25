@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EXPENSE_CATEGORIES } from "@/lib/types";
+import { ExpenseCategoryIcon } from "@/lib/expense-icons";
 import type { Expense, Property } from "@/lib/types";
 import { createExpense, updateExpense } from "./actions";
 
@@ -31,6 +32,9 @@ const schema = z.object({
     "supplies",
     "insurance",
     "tax",
+    "condo_fee",
+    "internet",
+    "hydro",
   ]),
   amount: z.coerce.number().min(0, "Must be 0 or more"),
   vendor: z.string().optional(),
@@ -146,7 +150,13 @@ export function ExpenseForm({
               <SelectContent>
                 {EXPENSE_CATEGORIES.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
-                    {category.label}
+                    <span className="flex items-center gap-2">
+                      <ExpenseCategoryIcon
+                        category={category.value}
+                        className="size-4 text-primary"
+                      />
+                      {category.label}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>

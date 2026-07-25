@@ -4,7 +4,10 @@ export type ExpenseCategory =
   | "maintenance"
   | "supplies"
   | "insurance"
-  | "tax";
+  | "tax"
+  | "condo_fee"
+  | "internet"
+  | "hydro";
 
 // A booking's source is free text (so custom platforms are possible), but the
 // form offers these as one-click presets, with "Other" revealing a text field.
@@ -42,6 +45,9 @@ export const CURRENCIES: { value: string; label: string }[] = [
 ];
 
 export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
+  { value: "condo_fee", label: "Condo Fee" },
+  { value: "hydro", label: "Hydro" },
+  { value: "internet", label: "Internet" },
   { value: "utilities", label: "Utilities" },
   { value: "cleaning", label: "Cleaning" },
   { value: "maintenance", label: "Maintenance" },

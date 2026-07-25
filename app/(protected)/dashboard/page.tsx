@@ -1,3 +1,11 @@
+import {
+  BedDouble,
+  Clock,
+  ReceiptText,
+  TrendingUp,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { currentMonthKey, getMonthRange, lastNMonths } from "@/lib/dates";
 import { accrueBookingsByMonth, resolveAvailableNights } from "@/lib/accrual";
@@ -15,6 +23,7 @@ function MetricCard({
   tone,
   badge,
   action,
+  icon: Icon,
 }: {
   title: string;
   value: string;
@@ -22,13 +31,19 @@ function MetricCard({
   tone?: "positive" | "negative";
   badge?: string;
   action?: React.ReactNode;
+  icon: LucideIcon;
 }) {
   return (
-    <Card>
+    <Card className="card-hover">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-sm font-normal text-muted-foreground">
-          {title}
-        </CardTitle>
+        <div className="flex items-center gap-2">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Icon className="size-4" aria-hidden="true" />
+          </span>
+          <CardTitle className="text-sm font-normal text-muted-foreground">
+            {title}
+          </CardTitle>
+        </div>
         {badge && (
           <span
             className={cn(
@@ -235,21 +250,25 @@ export default async function DashboardPage({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <MetricCard
           title="Income"
+          icon={Wallet}
           value={formatCurrency(income, property.currency)}
           subtitle="Accrued this month"
         />
         <MetricCard
           title="Expenses"
+          icon={ReceiptText}
           value={formatCurrency(expenseTotal, property.currency)}
         />
         <MetricCard
           title="Profit"
+          icon={TrendingUp}
           value={formatCurrency(profit, property.currency)}
           tone={profit >= 0 ? "positive" : "negative"}
           badge={profit >= 0 ? "On track" : "Over budget"}
         />
         <MetricCard
           title="Occupancy"
+          icon={BedDouble}
           value={`${Math.round(occupancyRate * 100)}%`}
           subtitle={`${bookedNights} of ${availableNights} nights`}
           action={
@@ -263,6 +282,7 @@ export default async function DashboardPage({
         />
         <MetricCard
           title="To receive"
+          icon={Clock}
           value={formatCurrency(toReceive, property.currency)}
           subtitle="Checked out, not yet marked received"
         />

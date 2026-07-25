@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/utils";
 
 const STATUS_GOOD = "#0ca30c";
 const STATUS_CRITICAL = "#d03b3b";
-const OCCUPANCY_COLOR = "#1baf7a";
+const OCCUPANCY_COLOR = "#4f46e5";
 
 interface ProfitPoint {
   month: string;

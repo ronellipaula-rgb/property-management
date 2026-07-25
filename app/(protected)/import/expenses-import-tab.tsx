@@ -16,7 +16,7 @@ import { bulkImportExpenses } from "./actions";
 
 const HEADERS = [
   "date",
-  "category (utilities/cleaning/maintenance/supplies/insurance/tax)",
+  "category (condo_fee/hydro/internet/utilities/cleaning/maintenance/supplies/insurance/tax)",
   "amount",
   "vendor",
   "recurring (yes/no)",

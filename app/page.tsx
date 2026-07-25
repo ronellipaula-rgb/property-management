@@ -58,21 +58,28 @@ export default async function LandingPage() {
       <main className="flex-1">
         <section className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-16 sm:py-24 lg:flex-row lg:items-center">
           <div className="flex flex-1 flex-col gap-6">
-            <Badge variant="outline" className="w-fit">
+            <Badge
+              variant="outline"
+              className="w-fit border-primary/30 bg-primary/5 text-primary"
+            >
               For property owners, not spreadsheets
             </Badge>
-            <h1 className="font-heading text-4xl font-semibold leading-tight sm:text-5xl">
-              Own your property&rsquo;s finances.
+            <h1 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+              Own your property&rsquo;s{" "}
+              <span className="bg-gradient-to-r from-primary via-violet-600 to-primary bg-clip-text text-transparent">
+                finances
+              </span>
+              .
             </h1>
             <p className="max-w-md text-lg text-muted-foreground">
               Track bookings, expenses, and mortgage-free profit for every unit you rent out —
               see exactly where your money goes each month.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <Button size="lg" asChild>
+              <Button size="lg" className="group" asChild>
                 <Link href={user ? "/dashboard" : "/login"}>
                   {user ? "Go to Dashboard" : "Get started"}
-                  <ArrowRight />
+                  <ArrowRight className="transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
@@ -82,7 +89,7 @@ export default async function LandingPage() {
           </div>
 
           <div className="flex-1">
-            <Card className="mx-auto max-w-sm overflow-hidden">
+            <Card className="card-hover mx-auto max-w-sm overflow-hidden">
               <CardContent className="flex flex-col gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Net this month</p>
@@ -107,7 +114,7 @@ export default async function LandingPage() {
                     <p className="font-medium">45%</p>
                   </div>
                 </div>
-                <div className="h-24 rounded-lg bg-gradient-to-r from-success/20 via-accent/20 to-primary/20" />
+                <div className="h-24 rounded-lg bg-gradient-to-r from-primary/25 via-violet-400/20 to-success/20" />
               </CardContent>
             </Card>
           </div>
@@ -116,7 +123,7 @@ export default async function LandingPage() {
         <section id="features" className="border-t bg-secondary/40">
           <div className="mx-auto grid max-w-5xl gap-4 px-6 py-16 sm:grid-cols-3">
             {FEATURES.map((feature) => (
-              <Card key={feature.title}>
+              <Card key={feature.title} className="card-hover">
                 <CardContent className="flex flex-col gap-3">
                   <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <feature.icon className="size-5" />

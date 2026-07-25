@@ -18,7 +18,8 @@ import type { ExpenseCategory } from "@/lib/types";
 const STATUS_GOOD = "#0ca30c";
 const STATUS_CRITICAL = "#d03b3b";
 
-// Fixed order (never re-sorted by value) from the validated categorical palette.
+// Fixed order (never re-sorted by value) from the validated categorical palette;
+// bars are axis-labeled, so identity never rests on color alone.
 const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   utilities: "#2a78d6",
   cleaning: "#008300",
@@ -26,6 +27,9 @@ const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   supplies: "#eda100",
   insurance: "#1baf7a",
   tax: "#eb6834",
+  condo_fee: "#4a3aa7",
+  internet: "#e34948",
+  hydro: "#64748b",
 };
 
 const REVENUE_COLORS = {
